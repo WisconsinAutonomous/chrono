@@ -101,10 +101,9 @@ ENDIF()
 # ------------------------------------------------------------------------------
 # Optionally use NVRTC to compile shader code rather than NVCC to PTX
 # ------------------------------------------------------------------------------
-set(USE_CUDA_NVRTC OFF CACHE BOOL "Compile shader code at run-time with NVRTC rather than NVCC at build time to PTX")
+set(USE_CUDA_NVRTC ON CACHE BOOL "Compile shader code at run-time with NVRTC rather than NVCC at build time to PTX")
 if(USE_CUDA_NVRTC)
   find_library(CUDA_nvrtc_LIBRARY nvrtc ${CUDA_TOOLKIT_ROOT_DIR}/lib64)
-  #message(STATUS "NVRTC LIB: ${CUDA_nvrtc_LIBRARY}")
   mark_as_advanced(CUDA_nvrtc_LIBRARY)
 
   if(NOT CUDA_nvrtc_LIBRARY)
@@ -143,8 +142,6 @@ if(USE_CUDA_NVRTC)
 endif()
 
 
-
-
 # ----------------------------------------------------------------------------
 # Generate and install configuration file
 # ----------------------------------------------------------------------------
@@ -166,6 +163,7 @@ set(ChronoEngine_sensor_RT_SOURCES
     rtkernels/camera.cu
     rtkernels/lidar.cu
     rtkernels/miss.cu
+    rtkernels/exception.cu
     rtkernels/triangle_mesh.cu
     rtkernels/camera_shaders.cu
     rtkernels/lidar_shaders.cu
@@ -193,6 +191,7 @@ set(ChronoEngine_sensor_CUDA_SOURCES
     cuda/curand_utils.cu
     cuda/image_ops.cu
     cuda/nn_prep.cu
+    cuda/lidar_clip.cu
 )
 set(ChronoEngine_sensor_CUDA_HEADERS
 	cuda/grayscale.cuh
@@ -203,6 +202,7 @@ set(ChronoEngine_sensor_CUDA_HEADERS
     cuda/curand_utils.cuh
     cuda/image_ops.cuh
     cuda/nn_prep.cuh
+    cuda/lidar_clip.cuh
 )
 
 source_group("Cuda" FILES
@@ -294,6 +294,7 @@ set(ChronoEngine_sensor_FILTERS_SOURCES
     filters/ChFilterPCfromDepth.cpp
     filters/ChFilterVisualizePointCloud.cpp
     filters/ChFilterImageOps.cpp
+    filters/ChFilterLidarIntensityClip.cpp
 )
 set(ChronoEngine_sensor_FILTERS_HEADERS
   	filters/ChFilter.h
@@ -311,6 +312,7 @@ set(ChronoEngine_sensor_FILTERS_HEADERS
     filters/ChFilterPCfromDepth.h
     filters/ChFilterVisualizePointCloud.h
     filters/ChFilterImageOps.h
+    filters/ChFilterLidarIntensityClip.h
 )
 
 source_group("Filters" FILES
@@ -368,6 +370,13 @@ set(SENSOR_STB_FILES
 source_group("utils\\stb" FILES ${SENSOR_STB_FILES})
 
 
+set(SENSOR_TINYOBJ_FILES
+    ${CMAKE_SOURCE_DIR}/src/chrono_thirdparty/tinyobjloader/tiny_obj_loader.h
+    ${CMAKE_SOURCE_DIR}/src/chrono_thirdparty/tinyobjloader/tiny_obj_loader.cc
+)
+source_group("utils\\tinyobjloader" FILES ${SENSOR_TINYOBJ_FILES})
+
+
 #-----------------------------------------------------------------------------
 # Create the ChronoEngine_sensor library
 #-----------------------------------------------------------------------------
@@ -376,7 +385,7 @@ source_group("utils\\stb" FILES ${SENSOR_STB_FILES})
 CUDA_WRAP_SRCS(ChronoEngine_sensor OBJ generated_obj_files ${ChronoEngine_sensor_CUDA_SOURCES} )
 
 # Generate the PTX files only if NVRTC is disabled
-if(NOT USE_CUDA_NVRTC)
+if(NOT USE_CUDA_NVRTC)	
   set(CUDA_GENERATED_OUTPUT_DIR "${CMAKE_BINARY_DIR}/sensor_ptx")
   add_definitions( -DPTX_GENERATED_PATH="${CUDA_GENERATED_OUTPUT_DIR}/" )
   CUDA_WRAP_SRCS(ChronoEngine_sensor PTX generated_rt_files ${ChronoEngine_sensor_RT_SOURCES} )
@@ -401,7 +410,8 @@ list(APPEND ALL_CH_SENSOR_FILES ${ChronoEngine_sensor_FILTERS_SOURCES})
 list(APPEND ALL_CH_SENSOR_FILES ${ChronoEngine_sensor_FILTERS_HEADERS})
 list(APPEND ALL_CH_SENSOR_FILES ${ChronoEngine_sensor_SCENE_SOURCES})
 list(APPEND ALL_CH_SENSOR_FILES ${ChronoEngine_sensor_SCENE_HEADERS})
-list(APPEND ALL_CH_SENSOR_FILES ${SENSOR_STB_FILES})
+list(APPEND ALL_CH_SENSOR_FILES ${SENSOR_STB_FILES}) 
+list(APPEND ALL_CH_SENSOR_FILES ${SENSOR_TINYOBJ_FILES})
 
 list(APPEND ALL_CH_SENSOR_FILES ${generated_obj_files})
 

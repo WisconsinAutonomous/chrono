@@ -77,36 +77,40 @@ int main(int argc, char* argv[]) {
     // -----------------------
     float intensity = .5;
     auto manager = chrono_types::make_shared<ChSensorManager>(&mphysicalSystem);
-    manager->scene->AddPointLight({2, 2.5, 100}, {intensity, intensity, intensity}, 500);
-    manager->scene->AddPointLight({9, 2.5, 100}, {intensity, intensity, intensity}, 500);
-    manager->scene->AddPointLight({16, 2.5, 100}, {intensity, intensity, intensity}, 500);
-    manager->scene->AddPointLight({23, 2.5, 100}, {intensity, intensity, intensity}, 500);
+    manager->scene->AddPointLight({2, 2.5, 100}, {intensity, intensity, intensity}, 5000);
+    manager->scene->AddPointLight({9, 2.5, 100}, {intensity, intensity, intensity}, 5000);
+    manager->scene->AddPointLight({16, 2.5, 100}, {intensity, intensity, intensity}, 5000);
+    manager->scene->AddPointLight({23, 2.5, 100}, {intensity, intensity, intensity}, 5000);
 
     // ------------------------------------------------
     // Create a camera and add it to the sensor manager
     // ------------------------------------------------
-    auto cam = Sensor::CreateFromJSON(GetChronoDataFile("sensor/json/generic/Camera.json"), mesh_body);
+    auto cam = Sensor::CreateFromJSON(GetChronoDataFile("sensor/json/generic/Camera.json"), mesh_body,
+                                      ChFrame<>({-5, 0, 0}, Q_from_AngZ(0)));
     // add sensor to the manager
     manager->AddSensor(cam);
 
     // -----------------------------------------------
     // Create a lidar and add it to the sensor manager
     // -----------------------------------------------
-    auto lidar = Sensor::CreateFromJSON(GetChronoDataFile("sensor/json/generic/Lidar.json"), mesh_body);
+    auto lidar = Sensor::CreateFromJSON(GetChronoDataFile("sensor/json/generic/Lidar.json"), mesh_body,
+                                        ChFrame<>({-5, 0, .5}, Q_from_AngZ(0)));
     // add sensor to the manager
     manager->AddSensor(lidar);
 
     // ---------------------------------------------
     // Create a gps and add it to the sensor manager
     // ---------------------------------------------
-    auto gps = Sensor::CreateFromJSON(GetChronoDataFile("sensor/json/generic/GPS.json"), mesh_body);
+    auto gps = Sensor::CreateFromJSON(GetChronoDataFile("sensor/json/generic/GPS.json"), mesh_body,
+                                      ChFrame<>({0, 0, 0}, Q_from_AngZ(0)));
     // add sensor to the manager
     manager->AddSensor(gps);
 
     // ---------------------------------------------
     // Create a imu and add it to the sensor manager
     // ---------------------------------------------
-    auto imu = Sensor::CreateFromJSON(GetChronoDataFile("sensor/json/generic/IMU.json"), mesh_body);
+    auto imu = Sensor::CreateFromJSON(GetChronoDataFile("sensor/json/generic/IMU.json"), mesh_body,
+                                      ChFrame<>({0, 0, 0}, Q_from_AngZ(0)));
     // add sensor to the manager
     manager->AddSensor(imu);
 

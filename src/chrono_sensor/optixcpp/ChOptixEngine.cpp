@@ -82,6 +82,12 @@ void ChOptixEngine::AssignSensor(std::shared_ptr<ChOptixSensor> sensor) {
         }
         sensor->LockFilterList();
 
+        if (m_verbose) {
+            if (!m_exception_prog)
+                m_exception_prog = GetRTProgram(m_context, "exception", "base");
+            m_context->setExceptionProgram(m_context->getEntryPointCount() - 1, m_exception_prog);
+        }
+
         m_noise_initialized = false;
         m_num_noise_vals = max(m_num_noise_vals, sensor->m_width * sensor->m_height);
 
@@ -116,7 +122,6 @@ void ChOptixEngine::UpdateSensors(std::shared_ptr<ChScene> scene) {
             std::lock_guard<std::mutex> lck(m_renderQueueMutex);
 
             // initialize noise if not done yet
-            // This is fixed pattern noise for now - TODO: should this be changing?
             if (!m_noise_initialized && m_num_noise_vals > 0) {
                 m_noise_initialized = true;
                 /// create and set the noise buffer here
@@ -124,22 +129,25 @@ void ChOptixEngine::UpdateSensors(std::shared_ptr<ChScene> scene) {
                     m_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT, m_num_noise_vals);
                 m_context["noise_buffer"]->setBuffer(ray_gen_noise_buffer);
 
-                auto generator = std::minstd_rand(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+                auto generator = std::minstd_rand(
+                    (unsigned int)std::chrono::high_resolution_clock::now().time_since_epoch().count());
                 float* ptr = (float*)ray_gen_noise_buffer->map();
-                for (int i = 0; i < m_num_noise_vals; i++) {
+                for (int i = 0; i < (int)m_num_noise_vals; i++) {
                     ptr[i] = generator() / (float)generator.max();
                 }
 
                 ray_gen_noise_buffer->unmap();
             }
 
+            // std::cout << "Starting optix scene update\n";
             // update the scene for the optix context
             UpdateCameraTransforms();
             UpdateBodyTransforms();
             UpdateSceneDescription(scene);
             UpdateDynamicMeshes();
+            // std::cout << "Updated optix scene\n";
 
-            float t = m_system->GetChTime();
+            float t = (float)m_system->GetChTime();
             // push the sensors that need updating to the render queue
             for (int i = 0; i < to_be_updated.size(); i++) {
                 m_renderQueue.push_back(m_assignedSensor[to_be_updated[i]]);
@@ -345,7 +353,8 @@ void ChOptixEngine::cylinderVisualization(std::shared_ptr<ChCylinderShape> cylin
     ChVector<double> asset_pos = visual_asset->Pos;
     ChMatrix33<double> asset_rot_mat = visual_asset->Rot;
     float radius = (float)cylinder_shape->GetCylinderGeometry().rad;
-    float height = (cylinder_shape->GetCylinderGeometry().p1 - cylinder_shape->GetCylinderGeometry().p2).Length();
+    float height =
+        (float)(cylinder_shape->GetCylinderGeometry().p1 - cylinder_shape->GetCylinderGeometry().p2).Length();
 
     // create the sphere geometry
     Geometry cylinder = GetOptixCylinderGeometry();  // m_context->createGeometry();
@@ -451,34 +460,34 @@ void ChOptixEngine::staticTrimeshVisualization(std::shared_ptr<ChTriangleMeshSha
     // copy over the vertex index buffer
     unsigned int* tmp_vertex_index_buffer = (unsigned int*)(vertex_index_buffer->map());
     for (int i = 0; i < mesh->getIndicesVertexes().size(); i++) {
-        tmp_vertex_index_buffer[3 * i] = mesh->getIndicesVertexes().data()[i].x();
-        tmp_vertex_index_buffer[3 * i + 1] = mesh->getIndicesVertexes().data()[i].y();
-        tmp_vertex_index_buffer[3 * i + 2] = mesh->getIndicesVertexes().data()[i].z();
+        tmp_vertex_index_buffer[3 * i] = (unsigned int)mesh->getIndicesVertexes().data()[i].x();
+        tmp_vertex_index_buffer[3 * i + 1] = (unsigned int)mesh->getIndicesVertexes().data()[i].y();
+        tmp_vertex_index_buffer[3 * i + 2] = (unsigned int)mesh->getIndicesVertexes().data()[i].z();
     }
     vertex_index_buffer->unmap();
 
     // copy over the vertex index buffer
     unsigned int* tmp_normal_index_buffer = (unsigned int*)(normal_index_buffer->map());
     for (int i = 0; i < mesh->getIndicesNormals().size(); i++) {
-        tmp_normal_index_buffer[3 * i] = mesh->getIndicesNormals().data()[i].x();
-        tmp_normal_index_buffer[3 * i + 1] = mesh->getIndicesNormals().data()[i].y();
-        tmp_normal_index_buffer[3 * i + 2] = mesh->getIndicesNormals().data()[i].z();
+        tmp_normal_index_buffer[3 * i] = (unsigned int)mesh->getIndicesNormals().data()[i].x();
+        tmp_normal_index_buffer[3 * i + 1] = (unsigned int)mesh->getIndicesNormals().data()[i].y();
+        tmp_normal_index_buffer[3 * i + 2] = (unsigned int)mesh->getIndicesNormals().data()[i].z();
     }
     normal_index_buffer->unmap();
 
     // copy over the vertex index buffer
     unsigned int* tmp_texcoord_index_buffer = (unsigned int*)(texcoord_index_buffer->map());
     for (int i = 0; i < mesh->getIndicesUV().size(); i++) {
-        tmp_texcoord_index_buffer[3 * i] = mesh->getIndicesUV().data()[i].x();
-        tmp_texcoord_index_buffer[3 * i + 1] = mesh->getIndicesUV().data()[i].y();
-        tmp_texcoord_index_buffer[3 * i + 2] = mesh->getIndicesUV().data()[i].z();
+        tmp_texcoord_index_buffer[3 * i] = (unsigned int)mesh->getIndicesUV().data()[i].x();
+        tmp_texcoord_index_buffer[3 * i + 1] = (unsigned int)mesh->getIndicesUV().data()[i].y();
+        tmp_texcoord_index_buffer[3 * i + 2] = (unsigned int)mesh->getIndicesUV().data()[i].z();
     }
     texcoord_index_buffer->unmap();
 
     // copy over the material index buffer
     unsigned int* tmp_mat_index_buffer = (unsigned int*)(mat_index_buffer->map());
     for (int i = 0; i < mesh->getIndicesColors().size(); i++) {
-        tmp_mat_index_buffer[i] = mesh->getIndicesColors().data()[i].x();
+        tmp_mat_index_buffer[i] = (unsigned int)mesh->getIndicesColors().data()[i].x();
     }
     mat_index_buffer->unmap();
 
@@ -535,6 +544,25 @@ void ChOptixEngine::staticTrimeshVisualization(std::shared_ptr<ChTriangleMeshSha
     triangle_instance["normal_index_buffer"]->setBuffer(normal_index_buffer);
     triangle_instance["texcoord_index_buffer"]->setBuffer(texcoord_index_buffer);
     // triangle_instance["material_buffer"]->setBuffer(mat_index_buffer);
+
+    if (mesh->getIndicesUV().size() == 0 && mesh->getCoordsUV().size() > 0) {
+        triangle_instance["texcoord_index_buffer"]->setBuffer(vertex_index_buffer);
+    }
+
+    // std::cout << "Static Triangle Mesh Buffers\n";
+    // size_t n;
+    // vertex_buffer->getSize(n);
+    // std::cout << "vertex_buffer: " << n << std::endl;
+    // normal_buffer->getSize(n);
+    // std::cout << "normal_buffer: " << n << std::endl;
+    // texcoord_buffer->getSize(n);
+    // std::cout << "texcoord_buffer: " << n << std::endl;
+    // vertex_index_buffer->getSize(n);
+    // std::cout << "vertex_index_buffer: " << n << std::endl;
+    // normal_index_buffer->getSize(n);
+    // std::cout << "normal_index_buffer: " << n << std::endl;
+    // texcoord_index_buffer->getSize(n);
+    // std::cout << "texcoord_index_buffer: " << n << std::endl;
 
     optix::GeometryGroup triangle_group = m_context->createGeometryGroup();
     triangle_group->setAcceleration(m_context->createAcceleration("trbvh"));
@@ -685,19 +713,24 @@ void ChOptixEngine::dynamicTrimeshVisualization(std::shared_ptr<ChTriangleMeshSh
     triangle_instance["normal_index_buffer"]->setBuffer(normal_index_buffer);
     triangle_instance["texcoord_index_buffer"]->setBuffer(texcoord_index_buffer);
 
-    // RTsize size = 0;
-    // vertex_buffer->getSize(size);
-    // std::cout << "Vertices: " << size << std::endl;
-    // normal_buffer->getSize(size);
-    // std::cout << "Normals: " << size << std::endl;
-    // texcoord_buffer->getSize(size);
-    // std::cout << "Texcoords: " << size << std::endl;
-    // vertex_index_buffer->getSize(size);
-    // std::cout << "Vertex Indices: " << size << std::endl;
-    // normal_index_buffer->getSize(size);
-    // std::cout << "Normal Indices: " << size << std::endl;
-    // texcoord_index_buffer->getSize(size);
-    // std::cout << "UV Indices: " << size << std::endl;
+    if (mesh->getIndicesUV().size() == 0 && mesh->getCoordsUV().size() > 0) {
+        triangle_instance["texcoord_index_buffer"]->setBuffer(vertex_index_buffer);
+    }
+
+    // std::cout << "=== Deformable Triangle Mesh Buffers ===\n";
+    // size_t n;
+    // vertex_buffer->getSize(n);
+    // std::cout << "vertex_buffer: " << n << std::endl;
+    // normal_buffer->getSize(n);
+    // std::cout << "normal_buffer: " << n << std::endl;
+    // texcoord_buffer->getSize(n);
+    // std::cout << "texcoord_buffer: " << n << std::endl;
+    // vertex_index_buffer->getSize(n);
+    // std::cout << "vertex_index_buffer: " << n << std::endl;
+    // normal_index_buffer->getSize(n);
+    // std::cout << "normal_index_buffer: " << n << std::endl;
+    // texcoord_index_buffer->getSize(n);
+    // std::cout << "texcoord_index_buffer: " << n << std::endl;
 
     optix::GeometryGroup triangle_group = m_context->createGeometryGroup();
     triangle_group->setAcceleration(m_context->createAcceleration("trbvh"));
@@ -728,10 +761,11 @@ void ChOptixEngine::Initialize() {
     rtContextGetDevices(m_context->get(), dev_ids.data());
     if (m_verbose) {
         std::cout << "Devices available: ";
-        for (int i = 0; i < n_devices; i++) {
+        for (unsigned int i = 0; i < n_devices; i++) {
             std::cout << i << ", ";
         }
         std::cout << std::endl;
+        rtContextSetPrintEnabled(m_context->get(), 1);
     }
     if (m_deviceId > n_devices - 1) {
         std::cerr << "Requested GPU not available, falling back on RT Device 0\n";
@@ -895,11 +929,7 @@ void ChOptixEngine::ConstructScene() {
                             //                            std::cout<<"mesh is stored"<<std::endl;
                             added_asset_for_body = true;
                         } else {
-                            // create a list of dynamic meshes
-                            // TODO: Why do we need to pass m_dynamicMeshes?
                             dynamicTrimeshVisualization(trimesh_shape, visual_asset, asset_group);
-                            std::cout << "Found a dynamic mesh and ignoring it...\n";
-                            std::cout << "TODO: allow visulization of these assets...\n";
                         }
 
                     } else if (std::shared_ptr<ChEllipsoidShape> ellipsoid_shape =
@@ -946,6 +976,8 @@ void ChOptixEngine::ConstructScene() {
 
     // Assumption made here that other physics items don't have a transform -> not always true!!!
     for (auto item : m_system->Get_otherphysicslist()) {
+        // add items one by one
+
         if (item->GetAssets().size() > 0) {
             optix::Group asset_group = m_context->createGroup();
             asset_group->setAcceleration(m_context->createAcceleration("trbvh"));
@@ -961,8 +993,7 @@ void ChOptixEngine::ConstructScene() {
                         std::cout << "Ignoring an asset that is set to invisible in otherphysicslist\n";
                     } else if (std::shared_ptr<ChBoxShape> box_shape = std::dynamic_pointer_cast<ChBoxShape>(asset)) {
                         // add box to somesort of data structure
-                        boxVisualization(box_shape, /* box_bounds,  box_intersect,*/ visual_asset, asset_group);
-                        std::cout << "other box stored" << std::endl;
+                        boxVisualization(box_shape, visual_asset, asset_group);
                         added_asset_to_root = true;
                     } else if (std::shared_ptr<ChCylinderShape> cylinder_shape =
                                    std::dynamic_pointer_cast<ChCylinderShape>(asset)) {
@@ -1008,7 +1039,7 @@ void ChOptixEngine::UpdateCameraTransforms() {
 
         // find index of camera transform that corresponds to sensor start time
         int start_index = 0;
-        for (int j = m_camera_keyframes.size() - 1; j >= 0; j--) {
+        for (int j = (int)m_camera_keyframes.size() - 1; j >= 0; j--) {
             if (std::get<0>(m_camera_keyframes[j]) < start_time + 1e-6) {
                 start_index = j;
                 break;
@@ -1045,7 +1076,7 @@ void ChOptixEngine::UpdateBodyTransforms() {
             }
         }
 
-        auto res = rtTransformSetMotionKeys(t->get(), m_keyframes.size(), RT_MOTIONKEYTYPE_MATRIX_FLOAT12,
+        auto res = rtTransformSetMotionKeys(t->get(), (unsigned int)m_keyframes.size(), RT_MOTIONKEYTYPE_MATRIX_FLOAT12,
                                             &m_internal_keyframes[i * m_keyframes.size() * 12]);
         t->setMotionBorderMode(RT_MOTIONBORDERMODE_CLAMP, RT_MOTIONBORDERMODE_CLAMP);
     }
@@ -1235,10 +1266,8 @@ Material ChOptixEngine::CreateMaterial(std::shared_ptr<ChVisualMaterial> chmat) 
     // use the single pbr shader that can handle reflectivity and transparency if it exists
     if (!m_camera_shader)
         m_camera_shader = GetRTProgram(m_context, "camera_shaders", "pbr_shader");
-
     if (!m_shadow_shader)
         m_shadow_shader = GetRTProgram(m_context, "shadow_shaders", "hit_shadow");
-
     if (!m_lidar_shader)
         m_lidar_shader = GetRTProgram(m_context, "lidar_shaders", "diffuse_shader");
 

@@ -5,10 +5,6 @@
 
   "Properties": {
     "Update Rate": 30,
-    "Offset Pose": {
-      "Location": [-5, 0, 2],
-      "Orientation": [0.995004, 0, 0.0998334, 0]
-    },
     "Width": 1280,
     "Height": 720,
     "Horizontal Field of View": 1.408,
@@ -26,11 +22,6 @@
     "Height": 720
     },
     {
-      "Filter": "ChFilterCameraNoiseConstNormal",
-      "Mean": 0.0,
-      "Standard Deviation": 0.02
-    },
-    {
       "Filter": "ChFilterCameraNoisePixDep",
       "Gain": 0.0,
       "Sigma Read": 0.02,
@@ -40,23 +31,11 @@
       "Filter": "ChFilterRGBA8Access"
     },
     {
-      "Filter": "ChFilterSave",
-      "Data Path": "SENSOR_OUTPUT/json/rgb/"
-    },
-    {
       "Filter": "ChFilterGrayscale",
       "Name": "Grayscale Filter"
     },
     {
       "Filter": "ChFilterR8Access"
-    },
-    {
-      "Filter": "ChFilterSave",
-      "Data Path": "SENSOR_OUTPUT/json/gray/"
-    },
-    {
-      "Filter": "ChFilterSave",
-      "Data Path": "SENSOR_OUTPUT/json/final/"
     }
   ]
 }

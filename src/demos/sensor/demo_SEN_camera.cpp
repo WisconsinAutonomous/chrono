@@ -49,24 +49,24 @@ enum NoiseModel {
     PIXEL_DEPENDENT,  // Pixel dependent gaussian noise
     NONE              // No noise model
 };
-NoiseModel noise_model = NONE;
+NoiseModel noise_model = PIXEL_DEPENDENT;
 
 // Camera lens model
 // Either PINHOLE or SPHERICAL
 CameraLensModelType lens_model = SPHERICAL;
 
 // Update rate in Hz
-float update_rate = 25;
+float update_rate = 30;
 
 // Image width and height
 unsigned int image_width = 1280;
 unsigned int image_height = 720;
 
 // Camera's horizontal field of view
-float fov = CH_C_PI / 3.;
+float fov = (float)CH_C_PI / 3.;
 
 // Lag (in seconds) between sensing and when data becomes accessible
-float lag = .05;
+float lag = .05f;
 
 // Exposure (in seconds) of each image
 float exposure_time = 0.02;

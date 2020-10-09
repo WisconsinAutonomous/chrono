@@ -103,10 +103,10 @@ bool sensor_save = false;
 bool sensor_vis = true;
 
 // Update rates of each sensor in Hz
-float cam_update_rate = 30;
-float lidar_update_rate = 10;
+float cam_update_rate = 30.f;
+float lidar_update_rate = 10.f;
 
-float exposure_time = 0.02;
+float exposure_time = 0.02f;
 
 int super_samples = 2;
 
@@ -119,12 +119,12 @@ unsigned int horizontal_samples = 4500;
 unsigned int vertical_samples = 32;
 
 // Camera's horizontal field of view
-float cam_fov = 1.408;
+float cam_fov = 1.408f;
 
 // Lidar's horizontal and vertical fov
-float lidar_hfov = 2 * CH_C_PI;   // 360 degrees
-float lidar_vmax = CH_C_PI / 12;  // 15 degrees up
-float lidar_vmin = -CH_C_PI / 6;  // 30 degrees down
+float lidar_hfov = (float)(2 * CH_C_PI);   // 360 degrees
+float lidar_vmax = (float)(CH_C_PI / 12);   // 15 degrees up
+float lidar_vmin = (float)(-CH_C_PI / 6);    // 30 degrees down
 
 // -----------------------------------------------------------------------------
 // IMU parameters
@@ -140,10 +140,10 @@ IMUNoiseModel imu_noise_type = NORMAL_DRIFT;
 int imu_update_rate = 100;
 
 // IMU lag (in seconds) between sensing and when data becomes accessible
-float imu_lag = 0;
+float imu_lag = 0.f;
 
 // IMU collection time (in seconds) of each sample
-float imu_collection_time = 0;
+float imu_collection_time = 0.f;
 
 // -----------------------------------------------------------------------------
 // GPS parameters
@@ -159,13 +159,13 @@ GPSNoiseModel gps_noise_type = GPS_NONE;
 int gps_update_rate = 10;
 
 // Camera's horizontal field of view
-float fov = 1.408;
+float fov = 1.408f;
 
 // GPS lag (in seconds) between sensing and when data becomes accessible
-float gps_lag = 0;
+float gps_lag = 0.f;
 
 // Collection time (in seconds) of eacn sample
-float gps_collection_time = 0;
+float gps_collection_time = 0.f;
 
 // Origin used as the gps reference point
 // Located in Madison, WI
@@ -277,7 +277,7 @@ int main(int argc, char* argv[]) {
 
     auto manager = chrono_types::make_shared<ChSensorManager>(gator.GetSystem());
     manager->scene->AddPointLight({100, 100, 100}, {2, 2, 2}, 5000);
-    manager->SetKeyframeSizeFromTimeStep(step_size, exposure_time);
+    manager->SetKeyframeSizeFromTimeStep((float)step_size, exposure_time);
 
     // third person camera
     auto cam = chrono_types::make_shared<ChCameraSensor>(
@@ -297,7 +297,7 @@ int main(int argc, char* argv[]) {
     cam->PushFilter(chrono_types::make_shared<ChFilterRGBA8Access>());
     manager->AddSensor(cam);
 
-    // roof mounted camera
+    // roof mounted camera .1, 0, 1.45
     auto cam2 = chrono_types::make_shared<ChCameraSensor>(
         gator.GetChassisBody(),                                                 // body camera is attached to
         cam_update_rate,                                                        // update rate in Hz
@@ -316,13 +316,20 @@ int main(int argc, char* argv[]) {
     manager->AddSensor(cam2);
 
     auto lidar = chrono_types::make_shared<ChLidarSensor>(
-        gator.GetChassisBody(),                                                  // body to which the IMU is attached
-        lidar_update_rate,                                                       // update rate
-        chrono::ChFrame<double>({-.08, 0, 1.68}, Q_from_AngAxis(0, {1, 0, 0})),  // offset pose from body
-        horizontal_samples,                                                      // horizontal samples
-        vertical_samples,                                                        // vertical samples/channels
-        lidar_hfov,                                                              // horizontal field of view
-        lidar_vmax, lidar_vmin                                                   // vertical field of view
+        gator.GetChassisBody(),                                                   // body to which the IMU is attached
+        lidar_update_rate,                                                        // update rate
+        chrono::ChFrame<double>({-.282, 0, 1.82}, Q_from_AngAxis(0, {1, 0, 0})),  // offset pose from body
+        horizontal_samples,                                                       // horizontal samples
+        vertical_samples,                                                         // vertical samples/channels
+        lidar_hfov,                                                               // horizontal field of view
+        lidar_vmax,                                                               // vertical field of view
+        lidar_vmin,                                                               // vertical field of view
+        100.0,                                                                    //
+        1,                                                                        //
+        0,                                                                        //
+        STRONGEST_RETURN,                                                         //
+        RAYCAST,                                                                  //
+        .1                                                                        //
     );
     lidar->SetName("Lidar Sensor");
     lidar->SetLag(1 / lidar_update_rate);
@@ -332,7 +339,7 @@ int main(int argc, char* argv[]) {
             chrono_types::make_shared<ChFilterVisualize>(horizontal_samples, vertical_samples, "Raw Lidar Data"));
     lidar->PushFilter(chrono_types::make_shared<ChFilterPCfromDepth>());
     if (sensor_vis)
-        lidar->PushFilter(chrono_types::make_shared<ChFilterVisualizePointCloud>(640, 480, "Lidar Point Cloud"));
+        lidar->PushFilter(chrono_types::make_shared<ChFilterVisualizePointCloud>(640, 480, .5, "Lidar Point Cloud"));
     if (sensor_save)
         lidar->PushFilter(chrono_types::make_shared<ChFilterSavePtCloud>(sens_dir + "/lidar/"));
     lidar->PushFilter(chrono_types::make_shared<ChFilterXYZIAccess>());

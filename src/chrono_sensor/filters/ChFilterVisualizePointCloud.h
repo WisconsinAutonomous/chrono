@@ -18,10 +18,10 @@
 #define CHFILTERVISUALIZEPOINTCLOUD_H
 
 // #include "glad.h"
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+// #include <GL/glew.h>
+// #include <GLFW/glfw3.h>
 
-#include "chrono_sensor/filters/ChFilter.h"
+#include "chrono_sensor/filters/ChFilterVisualize.h"
 
 namespace chrono {
 namespace sensor {
@@ -34,13 +34,14 @@ class ChSensor;
 
 /// A filter that, when applied to a sensor, creates a GUI window to visualize the sensor (using GLFW). This visualizes
 /// data as a point cloud. Will only work on data that can be interpreted as point cloud data.
-class CH_SENSOR_API ChFilterVisualizePointCloud : public ChFilter {
+class CH_SENSOR_API ChFilterVisualizePointCloud : public ChFilterVisualize {
   public:
     /// Class constructor
     /// @param w Width of the window to create
     /// @param h Height of the window to create
+    /// @param zoom Value to multiply by the default box in which points are viewed
     /// @param name String name of the filter
-    ChFilterVisualizePointCloud(int w, int h, std::string name = {});
+    ChFilterVisualizePointCloud(int w, int h, float zoom, std::string name = {});
 
     /// Class destructor
     virtual ~ChFilterVisualizePointCloud();
@@ -55,30 +56,7 @@ class CH_SENSOR_API ChFilterVisualizePointCloud : public ChFilter {
     virtual void Initialize(std::shared_ptr<ChSensor> pSensor) {}
 
   private:
-    /// Creates a GLFW window for this filter
-    void CreateGlfwWindow(std::shared_ptr<ChSensor> pSensor);
-
-    /// Makes this filter's GLFW window active so it can be drawn to
-    void MakeGlContextActive();
-
-    /// Helper to allow GLFWwindow to be in a unique_ptr
-    struct DestroyglfwWin {
-        void operator()(GLFWwindow* ptr) { glfwDestroyWindow(ptr); }
-    };
-
-    std::unique_ptr<GLFWwindow, DestroyglfwWin> m_window;  ///< pointer to the window
-    unsigned int m_gl_tex_id = 0;                          ///< reference data for the GL context and texture
-
-    /// Helper function for when new window is created
-    static void OnNewWindow();
-
-    /// Helper function for when window is closed.
-    static void OnCloseWindow();
-
-    static int s_windowCount;        ///< keeps track of the window count
-    bool m_window_disabled = false;  ///< for checking if window is not allowed on sysmtem (e.g. headless rendering)
-    int m_w;                         ///< width of the GLFW window
-    int m_h;                         ///< height of the GLFW window
+    float m_zoom;  ///< value for setting the zoom factor of the visualization box
 };
 
 /// @}

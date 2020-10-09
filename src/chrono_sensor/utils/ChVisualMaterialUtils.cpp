@@ -17,6 +17,7 @@
 // =============================================================================
 
 #include "chrono_sensor/utils/ChVisualMaterialUtils.h"
+
 #include <iostream>
 #include "chrono_thirdparty/tinyobjloader/tiny_obj_loader.h"
 
@@ -37,19 +38,20 @@ void CreateModernMeshAssets(std::shared_ptr<ChTriangleMeshShape> mesh_shape) {
     std::string mtl_base = "";
     std::string file_name = mesh_shape->GetMesh()->GetFileName();
 
-#ifdef _WIN32
-    int slash_location = (int)file_name.rfind('\\');
-#else
-    int slash_location = file_name.rfind('/');
-#endif
+    int slash_location = (int)file_name.rfind('/');
+
     if (std::string::npos != slash_location) {
         mtl_base = file_name.substr(0, slash_location + 1);
     }
 
-    LoadObj(&att, &shapes, &materials, &warn, &err, file_name.c_str(), mtl_base.c_str());
+    bool success = LoadObj(&att, &shapes, &materials, &warn, &err, file_name.c_str(), mtl_base.c_str());
 
-    // go through each shape and add the material as an asset. Also add the material id list to the ChVisualization
-    // asset along with a list of triangle-to-face id list to mesh
+    if (!success) {
+        std::cout << "Unable to load OBJ file: " << file_name << std::endl;
+    }
+
+    // go through each shape and add the material as an asset. Also add the material id list to the
+    // ChVisualization asset along with a list of triangle-to-face id list to mesh
 
     std::vector<std::shared_ptr<ChVisualMaterial>> material_list = std::vector<std::shared_ptr<ChVisualMaterial>>();
 
@@ -152,6 +154,8 @@ void CreateModernMeshAssets(std::shared_ptr<ChTriangleMeshShape> mesh_shape) {
     // std::cout << "UV Indices: " << texcoord_index_buffer.size() << std::endl;
     // std::cout << "Mat Indices: " << material_index_buffer.size() << std::endl;
     // std::cout << "Materials: " << material_list.size() << std::endl;
+
+    // std::cout << "Reloaded mesh with materials: " << file_name << std::endl;
 }
 
 void ConvertToModernAssets(std::shared_ptr<ChBody> body) {

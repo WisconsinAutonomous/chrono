@@ -19,6 +19,10 @@
 #ifndef CHOPTIXUTILS_H
 #define CHOPTIXUTILS_H
 
+#ifdef _WIN32
+ #define NOMINMAX
+#endif
+
 #include <optix.h>
 #include <optix_world.h>
 #include <optixu/optixu_math_namespace.h>
@@ -123,7 +127,7 @@ const std::string ptx_pre = "ChronoEngine_sensor_generated_";
 /// suffix for ptx file
 const std::string ptx_suff = ".cu.ptx";
 
-/// @}
+/// @} sensor_optix
 
 }  // namespace sensor
 }  // namespace chrono
